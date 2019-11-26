@@ -1,0 +1,261 @@
+
+/*
+// Allow requiring `.marko` files
+require("marko/node-require");
+ 
+const http = require("http");
+const layout = require("./layout"); 
+const port = 8080;
+
+http
+  .createServer((req, res) => {
+    // let the browser know html is coming
+    res.setHeader("content-type", "text/html");
+ 
+    // render the output to the `res` output stream
+    layout.render({ name: "Marko" }, res);
+  })
+  .listen(port,()=>{
+    console.log(" I'm listening !"); 
+  });
+
+*/
+
+
+require('marko/node-require');
+
+const Koa = require('koa');
+const app = new Koa();  
+const mount = require("koa-mount"); // 1.把整个应用程序挂载到一个特定路径  2.把中间件挂载到一个特定路径
+const serve = require("koa-static");
+
+const layout = require('./layout');  
+
+// 配置 lasso 处理 js/css/etc. 文件   
+require('lasso').configure({   
+  plugins: [ 'lasso-marko' ],  // 编译marko模板, 并灌入客户端  
+  outputDir: __dirname + '/static', // 生成的js/css/etc.等文件的存放路径
+  bundlingEnabled: true, // 是否打包
+  minify: false, // 是否压缩
+  // fingerprintsEnabled: false // Only add fingerprints to URLs in production 不理解
+});
+
+app.use(mount("/static", serve(__dirname + "/static")));
+
+app.use( ctx => {
+  ctx.type = 'html';
+  ctx.body = layout.stream({
+    name: 'Marko',
+    colors: ['red','green','blue']
+  })
+});
+
+app.listen( 8080, ()=>{
+  console.log('I am listening !');
+});
+
+
+/**
+ * 1/ require("marko/node-require") - 这个模块处理了允许引进.marko文件，并且解析 .marko 文件（ 再详细了解要去读源码，需要学习 typescript ）
+ * 2/ 每个被引进的marko模块都有 render 方法, 第一个参数用于向页面内插入数据,第二个参数 传入 res ( 很显然marko拿res返回了结果 )
+ * 3/ lasso 处理 css & js 文件
+ * 4/ lasso-marko 编译marko模板, 并灌入客户端
+ * 5/ 添加是事件 (在一个类中直接定义)
+ * 6/ 声明周期之一: onCreate(){ 服务端时就走的函数,目前来看第一个走的就是它 }
+ * 7/ <if()></if>
+ *    <else-if()></else-if>
+ *    <else></else>
+ * 8/ <for|item,index| of=(Array)></for>
+ *    <for|item,index| in=(Object)></for>
+ *    <for|value| from=first to=last step=increment>
+ *       <li></li>
+ *    </for>  // 这个未试出来怎样使用  
+ * 9/ 设置 key,当state改变时,marko根据key对ui进行增，删，改  
+ * 10/自定义组件，marko会自动查 components 中的组件，插入模板之中。父组件传值给子组件和react一样
+ * 11/marko查组件规则：像js的作用域一样，一级级向上查
+ *      components/
+              app-header.marko
+              app-footer.marko
+          pages/
+              about/
+                  components/
+                      team-members.marko
+                  page.marko
+              home/
+                  components/
+                      home-banner.marko
+                  page.marko
+ *12/也可以使用 tag 目录，将该组件的图片, css, index.marko 或 与目录同名的marko文件 放置在一起
+ *   也可以在组件目录再创建components目录供那个marko文件查找
+ * 13/<macro|{}| name='组件名称'>  </macro> 提供组合,复用功能
+ * 
+ * <macro|{ name }| name="welcome-message"> （ 以下内容在同一marko文件中 ）
+        <h1>Hello ${name}!</h1>
+    </macro>
+    <welcome-message name="Patrick" />
+    <welcome-message name="Austin" />
+    <welcome-message name="Simon" />
+    <welcome-message name="Blue" />
+ * 
+ * 14/onCreate(){ } // 组件初始化时调用, 注意经过测试发现首先初始化的还是 html 或者 自定义的 tag, 然后再去class内调用onCreate
+ * 15/this.setState() / this.state.count = ''; 两种更改state值的方式相同（ 与 react 不同，react只能通过　setState才可以 ）, 注意也是批量更新
+ * 16/marko状态更新也是批量更新,如果想监测状态何时更新的可用 this.once('update',()=>{ console.log('回调函数...') });  未想到合适的调用位置
+ * 17/注意: marko 对状态更改的监控只是一层，所以尽量要使用不可变的数据结构，即 每次用新状态替换旧状态。如果没有这样做的话 使用this.setStateDirty('状态') 告知marko去更新
+ * 18/marko中父子组件间相互传值,与react相同。 
+ * hello.marko
+ * class {
+      onCreate (input) {
+        this.state = {
+            name: 'Parent Component'
+        }
+      }
+      handlerFn () {
+        this.setState({ name: 'change name' });
+      }
+    }
+    <div>
+        <test handler=component.handlerFn.bind(component) name=(state.name) />
+    </div>
+ * 
+ * test.marko
+ * 
+ * class {
+      onCreate (input) {
+        this.parentHandler = input.handler
+      }
+      onClick (e, el) {
+        this.parentHandler()
+      }
+    }
+    <div>
+      <h1>${input.name}</h1>
+      <button onClick("onClick")>Click</button>
+    </div>
+ * 
+ * 
+ * 19/marko中父子组件间相互传值,也可以使用 context 模块(使用 npm 安装),与react中的context上下文也差不多 ( to be tested )
+ * 20/marko中也可以使用 redux, marko-redux ( to be tested )
+ * 21/直接直接使用 css (使用css其他预处理器如sass,less可以将less或sass写入)
+ * 22/绑定事件：
+ *  1. 派发事件 -> 为父组件添加on-事件，子组件使用 this.emit() 派发 ( input 的 onchange 事件有坑 )
+ *  2. 使用静态方法 -> 环境问题未能测试
+ *  static function handleClick(event) {
+      event.preventDefault();
+      console.log("Clicked!");
+    }
+    <button on-click(handleClick)> click me </button>
+    3. 使用静态方法 子组件向上传参  -> 环境问题未能测试
+    static function removeFriend(friendId, event) {
+      event.preventDefault();
+      window.myAPI.unfriend(friendId);
+    }
+    
+    <for|friend| of=input.friends>
+      <button on-click(removeFriend, friend.id)>
+        Unfriend ${friend.name}
+      </button>
+    </for>
+ * 23/普通插槽, 其中的 input.renderBody 就是插入的组件
+ * 24/普通插槽, 传入 公共数据
+ * 25/具名插槽，向下传递参数有坑 （ 除for标签外，子属性标签拿不到父标签的数据 ）
+ * 26/ a.利用具名插槽的方式写多个重复的标签, 文档中的例子未探究清楚，有个marko-tag.json文件不知道用处
+ *     b.属性放在属性标签上 <@column|person| heading="Name"> ${person.name} </@column>
+ *     c.具名插槽 嵌套 具名插槽
+ *     d.动态具名插槽 ( 实际还是使用循环 )
+ * // 参考 API
+ * 1. 渲染 api: renderSync,render,renderToString,stream --> 这些方法皆可在 客户端 和 服务端使用完成渲染, to be tested
+ *    $global 属性, 将数据作为全局属性灌入所有视图 
+ * 2. 语法: 
+ *        1.${} , $!{}
+ *        2.属性既可以是 字符串 或 js表达式
+ *        3.属性上应用扩展运算符
+ *        4.style属性可用 string,obj
+ *        5.class属性的使用
+ *        6.id 属性和class 属性有简写形式: <div#my-id.my-class />
+ *        7.标签后的参数，可用于解构 
+ *        8.<if(true|false)></if> if标签可跟true或false
+ *        9.动态标签
+*           <${input.linkUrl ? "a" : null} href=input.linkUrl >
+                Some body content
+              </> 
+              解析为   <a href="http://localhost/"> Some body content </a>   或   Some body content
+ *        10.动态组件（ 可根据条件渲染不同组件 ）
+ *        11.使用input.renderBody渲染组件
+ *        12.属性标签（具名插槽使用的，向下传递参数有坑，除for标签外，子属性标签拿不到父标签的数据）
+ *        13.行内 js 代码 使用 $ , 每次组件重新渲染都会执行
+ *        14.静态 js 代码 使用 static, 只在组件装载时执行一次（ It must be declared at the top level and does not have access to values passed in at render time.）
+ *            static var count = 0;
+              static var formatter = new Formatter();
+              static function sum(a, b) {
+                  return a + b;
+              };
+              <div>${formatter.format(sum(2, 3))}</div>
+ *        15.可使用 es6 模块语法
+ * 3.核心标签
+ *    1.<if()></if><else-if()></else-if><else></else>
+ *    2.<for|item,index| of=(array)></for>
+ *      <for|key,value| in=(obj)></for>
+ *      <for|i| from=0 to=10 step=2>  <li>${i}</li> </for>
+ *    3.<macro></macro> 组件复用,  macro 内部 再使用 macro可递归出一个树结构( 抽时间可以玩玩儿 )
+ *         <macro|{ name, count }| name="greeting">
+              <span>Hello ${name}! You have ${count} new messages.</span>
+          </macro>
+          <greeting name="Frank" count=20/>
+          <greeting name="Simon" count=30/>
+ *        
+
+          <macro|{renderBody}| name='special-heading'>
+              <${ renderBody } />
+          </macro>
+          <p>
+            <special-heading>
+                Hello
+            </special-heading>
+          </p>
+ *      4.<await></await>, 可设置 timeout 属性
+ *        <await(promise)>
+ *          <@placeholder>
+ *              <p>结果未返回时展示的内容</p>
+ *          <@placeholder>
+ *          <@then(data)>
+ *              <p>${ data.title }</p>
+ *          </@then>
+ *          <@catch|err|>
+ *               <p>${ err.name }</p>
+ *          </@catch>
+ *        </await>
+ *      5.基本不会用到的 <include-text('./foo.txt') />    <include-html('./foo.html')/>
+ *  
+ * 4. class 组件
+ *      1.服务端渲染 - (自己理解) 服务端渲染组件树后，浏览器会再次根据客户端打包的js渲染ui组件  
+ *      2.对组件按照 css, js, marko 进行多模块拆分，将一个 marko 组件所需要的js,css,marko放入一个文件夹（ 其中 css 文件可以是 *.style.* ）  
+ *      3.组件根据 客户端 和 服务端 拆分  --> 纯服务端的东西不会被打包发送到浏览器
+ *          component.js
+ *        class {
+            onCreate(input, out) { }
+            onInput(input, out) { }
+            onRender(out) { }
+            onDestroy() { }
+          }
+ *        component-browser.js    任何操作 dom 或浏览器的 js 代码都应放入这里
+ *        class {
+            onMount() { }
+            onUpdate() { }
+          }
+ *  
+ *  5.给dom直接绑定事件 及 事件中参数传递
+ * 
+ *  6.给组件绑定事件, 事件中参数传递 及 触发事件  （ this.emit('event','param1','param2')   ||  component  ）
+ * 
+ * 
+ * 
+ * 
+ * 
+ * 
+ * 
+ * 
+ *  
+ *  
+ */
+
+

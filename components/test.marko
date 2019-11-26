@@ -1,0 +1,40 @@
+<!-- 
+  1. 父子组件通信
+ -->
+
+class {
+    onCreate(input){
+      console.log('test onCreate test...');
+      this.props = input;
+    }
+    handleClick(val){
+      this.props.handler( val );
+    }
+}
+
+<div>
+    <p>I'm counting $!{ `<b>${ input.count }</b>` }</p>
+    <!-- <button on-click('handleClick')>click me</button> -->
+    <for|item,index| of=(input.group)>
+      <!-- <button on-click(()=>{ input.handler( index + 1) })>${ item }</button> -->
+      <button on-click(()=>{ component.handleClick( index + 1 ) })>${ item }</button>
+    </for>
+</div>
+
+<!--
+  2.子组件的 callback（ 为input添加onchange事件，发现了奇怪的现象，只有onBlur时才会触发 ）
+ -->
+<!--  
+class {
+  handleChange(evt){  
+    const val = evt.target.value;   
+    console.log('val---',val);  
+    if( val.length >= 3 ){ 
+      this.emit('email-change',{ value: val })
+    }
+  }
+}
+<div>
+  <input name=(input.name) on-change('handleChange') />
+</div>
+ -->

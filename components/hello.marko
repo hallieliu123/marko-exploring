@@ -1,0 +1,57 @@
+<!-- 
+<macro|{ name }| name="welcome-message">
+    <h1>Hello ${name}!</h1>
+</macro>
+
+<welcome-message name="Patrick" />
+<welcome-message name="Austin" />
+<welcome-message name="Simon" />
+<welcome-message name="Blue" />
+ -->
+
+
+<!-- 
+    1. 父子组件通信
+ -->
+class {
+        onCreate(){
+            console.log('hello onCreate test...');
+            this.state = {
+                count: 0,
+                group: ['btn1','btn2','btn3']
+            }
+        }
+        handleClick(val){
+            this.setState({ count: this.state.count + val });
+        }
+    }
+<div>
+    <test handler=(component.handleClick.bind(component)) count=(state.count) group=(state.group) />
+</div>
+
+<!-- 
+    2.子组件的callback
+ -->
+<!-- 
+class {
+    handleTrigger(obj){
+        console.log('触发--',obj);
+    }
+}
+
+<div>
+    <h1>Hello</h1>
+    <test on-email-change('handleTrigger') name='email' />
+</div>
+ -->
+
+
+
+
+
+
+
+
+
+
+

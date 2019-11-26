@@ -1,0 +1,23 @@
+{
+  "name": "app",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "@lasso/marko-taglib": "^1.0.15",
+    "koa": "^2.11.0",
+    "koa-mount": "^4.0.0",
+    "koa-static": "^5.0.0",
+    "lasso": "^3.3.1",
+    "lasso-marko": "^2.4.8",
+    "marko": "^4.18.24"
+  },
+  "browser": {
+    "hello.js": "hello.browser.js"
+  }
+}
