@@ -105,11 +105,12 @@ lasso - summary of basic api
 
  20/ marko中也可以使用 redux, marko-redux ( to be tested )
 
- * 21/直接直接使用 css (使用css其他预处理器如sass,less可以将less或sass写入)
- * 22/绑定事件：
- *  1. 派发事件 -> 为父组件添加on-事件，子组件使用 this.emit() 派发 ( input 的 onchange 事件有坑 )
- *  2. 使用静态方法 -> 环境问题未能测试
- *  static function handleClick(event) {
+ 21/ 直接使用 css (使用css其他预处理器如sass,less可以将less或sass写入)
+
+ 22/ 绑定事件：
+   1. 派发事件 -> 为父组件添加on-事件，子组件使用 this.emit() 派发 ( input 的 onchange 事件有坑 - 只是在onblur的时候触发，太不友好了 )
+   2. 使用静态方法 -> 环境问题未能测试
+   static function handleClick(event) {
       event.preventDefault();
       console.log("Clicked!");
     }
@@ -125,55 +126,67 @@ lasso - summary of basic api
         Unfriend ${friend.name}
       </button>
     </for>
- * 23/普通插槽, 其中的 input.renderBody 就是插入的组件
- * 24/普通插槽, 传入 公共数据
- * 25/具名插槽，向下传递参数有坑 （ 除for标签外，子属性标签拿不到父标签的数据 ）
- * 26/ a.利用具名插槽的方式写多个重复的标签, 文档中的例子未探究清楚，有个marko-tag.json文件不知道用处
- *     b.属性放在属性标签上 <@column|person| heading="Name"> ${person.name} </@column>
- *     c.具名插槽 嵌套 具名插槽
- *     d.动态具名插槽 ( 实际还是使用循环 )
- * // 参考 API
- * 1. 渲染 api: renderSync,render,renderToString,stream --> 这些方法皆可在 客户端 和 服务端使用完成渲染, to be tested
- *    $global 属性, 将数据作为全局属性灌入所有视图 
- * 2. 语法: 
- *        1.${} , $!{}
- *        2.属性既可以是 字符串 或 js表达式
- *        3.属性上应用扩展运算符
- *        4.style属性可用 string,obj
- *        5.class属性的使用
- *        6.id 属性和class 属性有简写形式: <div#my-id.my-class />
- *        7.标签后的参数，可用于解构 
- *        8.<if(true|false)></if> if标签可跟true或false
- *        9.动态标签
-*           <${input.linkUrl ? "a" : null} href=input.linkUrl >
-                Some body content
-              </> 
-              解析为   <a href="http://localhost/"> Some body content </a>   或   Some body content
- *        10.动态组件（ 可根据条件渲染不同组件 ）
- *        11.使用input.renderBody渲染组件
- *        12.属性标签（具名插槽使用的，向下传递参数有坑，除for标签外，子属性标签拿不到父标签的数据）
- *        13.行内 js 代码 使用 $ , 每次组件重新渲染都会执行
- *        14.静态 js 代码 使用 static, 只在组件装载时执行一次（ It must be declared at the top level and does not have access to values passed in at render time.）
- *            static var count = 0;
-              static var formatter = new Formatter();
-              static function sum(a, b) {
-                  return a + b;
-              };
-              <div>${formatter.format(sum(2, 3))}</div>
- *        15.可使用 es6 模块语法
- * 3.核心标签
- *    1.<if()></if><else-if()></else-if><else></else>
- *    2.<for|item,index| of=(array)></for>
- *      <for|key,value| in=(obj)></for>
- *      <for|i| from=0 to=10 step=2>  <li>${i}</li> </for>
- *    3.<macro></macro> 组件复用,  macro 内部 再使用 macro可递归出一个树结构( 抽时间可以玩玩儿 )
- *         <macro|{ name, count }| name="greeting">
-              <span>Hello ${name}! You have ${count} new messages.</span>
-          </macro>
-          <greeting name="Frank" count=20/>
-          <greeting name="Simon" count=30/>
- *        
 
+23/ 普通插槽, 其中的 input.renderBody 就是插入的组件
+24/ 普通插槽, 传入 公共数据
+
+25/ 具名插槽，向下传递参数有坑 （ 除for标签外，子属性标签拿不到父标签的数据 ）
+26/ a.利用具名插槽的方式写多个重复的标签, 文档中的例子未探究清楚，有个marko-tag.json文件不知道用处
+    b.属性放在属性标签上 <@column|person| heading="Name"> ${person.name} </@column>
+    c.具名插槽 嵌套 具名插槽
+    d.动态具名插槽 ( 实际还是使用循环 )
+
+ // 参考 API
+1. 渲染 api: renderSync,render,renderToString,stream --> 这些方法皆可在 客户端 和 服务端使用完成渲染, to be tested
+   $global 属性, 将数据作为全局属性灌入所有视图
+
+
+ 2. 语法: 
+        1.${} , $!{}
+        2.属性既可以是 字符串 或 js表达式
+        3.属性上应用扩展运算符
+        4.style属性可用 string,obj
+        5.class属性的使用
+        6.id 属性和class 属性有简写形式: <div#my-id.my-class />
+        7.标签后的参数，可用于解构
+        8.<if(true|false)></if> if标签可跟true或false
+        9.动态标签
+            <${input.linkUrl ? "a" : null} href=input.linkUrl >
+                Some body content
+            </>
+            解析为   <a href="http://localhost/"> Some body content </a>   或   Some body content
+        10.动态组件（ 可根据条件渲染不同组件 ）
+        11.使用input.renderBody渲染组件
+        12.属性标签（具名插槽使用的，向下传递参数有坑，除for标签外，子属性标签拿不到父标签的数据）
+            <list|item|>
+                ${item.name}
+                <@separator>${item} (oops, ReferenceError)</@separator>
+            </list>
+
+        13.行内 js 代码 使用 $ , 每次组件重新渲染都会执行
+
+        14.静态 js 代码 使用 static, 只在组件装载时执行一次（ It must be declared at the top level and does not have access to values passed in at render time.）
+            static var count = 0;
+            static var formatter = new Formatter();
+            static function sum(a, b) {
+                return a + b;
+            };
+            <div>${formatter.format(sum(2, 3))}</div>
+
+       15.可使用 es6 模块语法
+
+ 3.核心标签
+    1.<if()></if><else-if()></else-if><else></else>
+    2.<for|item,index| of=(array)></for>
+      <for|key,value| in=(obj)></for>
+      <for|i| from=0 to=10 step=2>  <li>${i}</li> </for>
+    3.<macro></macro> 组件复用,  macro 内部 再使用 macro可递归出一个树结构( 抽时间可以玩玩儿 )
+         <macro|{ name, count }| name="greeting">
+              <span>Hello ${name}! You have ${count} new messages.</span>
+           </macro>
+           <greeting name="Frank" count=20/>
+           <greeting name="Simon" count=30/>
+         
           <macro|{renderBody}| name='special-heading'>
               <${ renderBody } />
           </macro>
@@ -182,50 +195,105 @@ lasso - summary of basic api
                 Hello
             </special-heading>
           </p>
- *      4.<await></await>, 可设置 timeout 属性
- *        <await(promise)>
- *          <@placeholder>
- *              <p>结果未返回时展示的内容</p>
- *          <@placeholder>
- *          <@then(data)>
- *              <p>${ data.title }</p>
- *          </@then>
- *          <@catch|err|>
- *               <p>${ err.name }</p>
- *          </@catch>
- *        </await>
- *      5.基本不会用到的 <include-text('./foo.txt') />    <include-html('./foo.html')/>
- *  
- * 4. class 组件
- *      1.服务端渲染 - (自己理解) 服务端渲染组件树后，浏览器会再次根据客户端打包的js渲染ui组件  
- *      2.对组件按照 css, js, marko 进行多模块拆分，将一个 marko 组件所需要的js,css,marko放入一个文件夹（ 其中 css 文件可以是 *.style.* ）  
- *      3.组件根据 客户端 和 服务端 拆分  --> 纯服务端的东西不会被打包发送到浏览器
- *          component.js
- *        class {
-            onCreate(input, out) { }
-            onInput(input, out) { }
-            onRender(out) { }
-            onDestroy() { }
-          }
- *        component-browser.js    任何操作 dom 或浏览器的 js 代码都应放入这里
- *        class {
-            onMount() { }
-            onUpdate() { }
-          }
- *  
- *  5.给dom直接绑定事件 及 事件中参数传递
- * 
- *  6.给组件绑定事件, 事件中参数传递 及 触发事件  （ this.emit('event','param1','param2')   ||  component  ）
- * 
- *   
- * 
- * 
- * 
- * 
- * 
- * 
- *  
- *  
- */
+
+    4.<await></await>, 可设置 timeout 属性 
+        $ var personPromise = new Promise((resolve, reject) => {
+            setTimeout(function() {
+                resolve({
+                    name: 'Frank'
+                });
+            }, 1000);
+        });
+        <await(personPromise)>
+            <@placeholder>
+                <!-- Displayed while promise is pending -->
+        
+                Loading...
+            </@placeholder>
+        
+            <@then|person|>
+                <!-- Displayed if promise resolves -->
+        
+                <div>Hello ${person.name}!</div>
+            </@then>
+        
+            <@catch|err|>
+                <!-- Displayed if promise rejects -->
+        
+                Caught error: ${err.name}.
+            </@catch>
+        </await>
+    5.基本不会用到的 <include-text('./foo.txt') />    <include-html('./foo.html')/>
+  
+
+4.class 组件  
+    1.服务端渲染 - (自己理解) 服务端渲染组件树后，浏览器会再次根据客户端打包的js渲染ui组件  
+    2.对组件按照 css, js, marko 进行多模块拆分，将一个 marko 组件所需要的js,css,marko放入一个文件夹（ 其中 css 文件可以是 *.style.* ）  
+    3.组件根据 客户端 和 服务端 拆分  --> 纯服务端的东西不会被打包发送到浏览器
+        component.js
+    class {
+        onCreate(input, out) { }
+        onInput(input, out) { }
+        onRender(out) { }
+        onDestroy() { }
+    }
+        component-browser.js    任何操作 dom 或浏览器的 js 代码都应放入这里
+    class {
+        onMount() { }
+        onUpdate() { }
+    }
+  
+5.给dom直接绑定事件 及 事件中参数传递
+ 
+6.给组件绑定事件, 事件中参数传递 及 触发事件  （ this.emit('event','param1','param2')   ||  component  ）
+ 
+7.component 变量 - 当前组件实例
+
+8.input变量对象 - = component.input | this.input
+
+9.state变量对象
+
+10.实例的 destroy(), forceUpdate() 方法
+
+11.生命周期函数
+    onCreate(input,out) {},
+    onInput(input,out) {},
+    onRender(out) {},
+    onMount() {},  
+    onUpdate() {},
+    onDestroy() {}
+
+  第一次渲染: create -> input -> render -> mount
+  input更新: input -> render -> update
+  state更新: render -> update
+  卸载: destroy
+
+12. component实例提供的操作 dom 函数
+    this.appendTo( targetEl );
+    this.insertAfter( targetEl );
+    this.insertBefore( targetEl );
+    this.prependTo( targetEl );
+    this.replace( targetEl );
+    this.replaceChildrenOf( targetEl );
+
+marko.json && marko-tag.json
+
+
+
+
+
+
+ 
+ 
+ 
+ 
+ 
+  
+  
+
+
+
+
+
 
 
