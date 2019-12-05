@@ -263,7 +263,7 @@ lasso - summary of basic api
     onUpdate() {},
     onDestroy() {}
 
-  第一次渲染: create -> input -> render -> mount
+  第一次渲染: create -> input -> render -> mount  
   input更新: input -> render -> update
   state更新: render -> update
   卸载: destroy
@@ -278,6 +278,8 @@ lasso - summary of basic api
 
 marko.json && marko-tag.json
 
+1. marko.tag.json - 配置一个组件
+2. marko.json - 配置组件库
 
 
 
